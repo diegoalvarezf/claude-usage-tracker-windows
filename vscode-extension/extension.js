@@ -184,51 +184,56 @@ function generateHtml(data) {
   return `<!DOCTYPE html><html lang="es"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Claude Usage Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,'Segoe UI',sans-serif;background:#0f0f0f;color:#e0e0e0;padding:24px}
-h1{font-size:1.5rem;font-weight:700;color:#fff;margin-bottom:4px}
-.subtitle{color:#666;font-size:.85rem;margin-bottom:28px}
-.cards{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:32px}
-.card{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:12px;padding:20px 24px;min-width:180px}
-.card-label{font-size:.75rem;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
-.card-value{font-size:1.6rem;font-weight:700;color:#f0a500}
-.card-sub{font-size:.8rem;color:#555;margin-top:4px}
-.section-title{font-size:1rem;font-weight:600;color:#aaa;margin-bottom:14px;text-transform:uppercase;letter-spacing:.06em}
-.month-block{background:#1a1a1a;border:1px solid #2a2a2a;border-radius:12px;margin-bottom:20px;overflow:hidden}
-.month-header{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;background:#222;border-bottom:1px solid #2a2a2a}
-.month-name{font-weight:600;font-size:1rem;color:#fff}
-.month-total{font-weight:700;font-size:1.1rem;color:#f0a500}
+*{box-sizing:border-box;margin:0;padding:0;image-rendering:pixelated}
+body{font-family:'Press Start 2P',monospace;background:#0a0500;color:#ff7900;padding:24px;font-size:9px;line-height:2;background-image:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.25) 2px,rgba(0,0,0,0.25) 4px)}
+h1{font-size:13px;color:#ff7900;margin-bottom:6px;text-shadow:3px 3px #4d2400}
+.subtitle{color:#7a3800;font-size:7px;margin-bottom:28px}
+.cards{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:32px}
+.card{background:#110800;border:2px solid #ff7900;box-shadow:4px 4px 0 #4d2400;padding:16px 18px;min-width:160px}
+.card-label{font-size:6px;color:#994800;margin-bottom:8px}
+.card-value{font-size:15px;color:#ffffff;text-shadow:2px 2px #4d2400}
+.card-value.blue{color:#ffb347;text-shadow:2px 2px #4d2400}
+.card-sub{font-size:6px;color:#5c2d00;margin-top:6px}
+.section-title{font-size:8px;color:#ff7900;margin-bottom:14px;border-bottom:1px solid #4d2400;padding-bottom:6px}
+.month-block{border:2px solid #ff7900;box-shadow:4px 4px 0 #4d2400;margin-bottom:20px;background:#080300}
+.month-header{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;background:#2a1400;border-bottom:2px solid #ff7900}
+.month-name{font-size:9px;color:#ff7900}
+.month-total{font-size:11px;color:#ffffff;text-shadow:1px 1px #4d2400}
 table{width:100%;border-collapse:collapse}
-th{padding:10px 16px;text-align:left;font-size:.75rem;color:#555;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid #222}
-td{padding:10px 16px;font-size:.85rem;border-bottom:1px solid #1e1e1e;vertical-align:top}
+th{padding:8px 12px;text-align:left;font-size:6px;color:#7a3800;border-bottom:1px solid #2a1400}
+td{padding:8px 12px;font-size:7px;border-bottom:1px dotted #1a0900;vertical-align:top}
 tr:last-child td{border-bottom:none}
-tr:hover td{background:#202020}
+tr:hover td{background:#1a0900}
 .right{text-align:right}
-.cost{color:#f0a500;font-weight:600;font-family:monospace}
-.bar-wrap{background:#2a2a2a;border-radius:4px;height:6px;width:100%;max-width:200px;margin-bottom:6px}
-.bar{background:linear-gradient(90deg,#f0a500,#ff6b35);border-radius:4px;height:6px}
-.models-list{display:flex;flex-wrap:wrap;gap:4px}
-.badge-model{font-size:.72rem;background:#2a2a2a;color:#888;padding:2px 7px;border-radius:10px}
+.cost{color:#ffffff}
+.bar-wrap{background:#0d0500;height:8px;width:100%;max-width:150px;margin-bottom:6px;border:1px solid #4d2400}
+.bar{background:#ff7900;height:100%}
+.models-list{display:flex;flex-wrap:wrap;gap:4px;margin-top:2px}
+.badge-model{font-size:5px;border:1px solid #5c2d00;color:#7a3800;padding:2px 4px}
 .section{margin-bottom:36px}
-.updated{font-size:.78rem;color:#444;margin-top:32px;text-align:center}
+.updated{font-size:6px;color:#4d2400;margin-top:32px;text-align:center}
+.blink{animation:blink 1s step-end infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
 </style></head><body>
-<h1>Claude Usage Tracker</h1>
-<p class="subtitle">Actualizado: ${now}</p>
+<h1>&gt; CLAUDE USAGE TRACKER_<span class="blink">█</span></h1>
+<p class="subtitle">// ACTUALIZADO: ${now}</p>
 <div class="cards">
-  <div class="card"><div class="card-label">Coste total</div><div class="card-value">${$(totalCost)}</div><div class="card-sub">${projectFolders.length} proyectos</div></div>
-  <div class="card"><div class="card-label">Tokens entrada</div><div class="card-value" style="font-size:1.2rem;color:#7ec8e3">${fmt(totalTok.input)}</div><div class="card-sub">Cache escritura: ${fmt(totalTok.cacheWrite)}</div></div>
-  <div class="card"><div class="card-label">Cache leída</div><div class="card-value" style="font-size:1.2rem;color:#7ec8e3">${fmt(totalTok.cacheRead)}</div><div class="card-sub">Tokens salida: ${fmt(totalTok.output)}</div></div>
-  <div class="card"><div class="card-label">Mes actual</div><div class="card-value" style="font-size:1.2rem">${$(costeMesActual)}</div><div class="card-sub">${mesActual ? monthLabel(mesActual) : '—'}</div></div>
+  <div class="card"><div class="card-label">&gt; COSTE TOTAL</div><div class="card-value">${$(totalCost)}</div><div class="card-sub">${projectFolders.length} PROYECTOS</div></div>
+  <div class="card"><div class="card-label">&gt; TOKENS ENTRADA</div><div class="card-value blue" style="font-size:12px">${fmt(totalTok.input)}</div><div class="card-sub">CACHE ESCR: ${fmt(totalTok.cacheWrite)}</div></div>
+  <div class="card"><div class="card-label">&gt; CACHE LEIDA</div><div class="card-value blue" style="font-size:12px">${fmt(totalTok.cacheRead)}</div><div class="card-sub">TOK SALIDA: ${fmt(totalTok.output)}</div></div>
+  <div class="card"><div class="card-label">&gt; MES ACTUAL</div><div class="card-value" style="font-size:12px">${$(costeMesActual)}</div><div class="card-sub">${mesActual ? monthLabel(mesActual).toUpperCase() : '---'}</div></div>
 </div>
-<div class="section"><div class="section-title">Por mes y proyecto</div>${mesesTabla || '<p style="color:#555">Sin datos</p>'}</div>
-<div class="section"><div class="section-title">Por modelo</div>
+<div class="section"><div class="section-title">// POR MES Y PROYECTO</div>${mesesTabla || '<p style="color:#003b00">SIN DATOS</p>'}</div>
+<div class="section"><div class="section-title">// POR MODELO</div>
   <div class="month-block"><table>
-    <thead><tr><th>Modelo</th><th class="right">Coste</th><th class="right">%</th><th class="right">Entrada</th><th class="right">Cache escr.</th><th class="right">Cache lect.</th><th class="right">Salida</th></tr></thead>
-    <tbody>${modelasTabla || '<tr><td colspan="7" style="color:#555;text-align:center">Sin datos</td></tr>'}</tbody>
+    <thead><tr><th>MODELO</th><th class="right">COSTE</th><th class="right">%</th><th class="right">ENTRADA</th><th class="right">C.ESCR</th><th class="right">C.LECT</th><th class="right">SALIDA</th></tr></thead>
+    <tbody>${modelasTabla || '<tr><td colspan="7" style="color:#003b00;text-align:center">SIN DATOS</td></tr>'}</tbody>
   </table></div>
 </div>
-<p class="updated">Datos leídos desde ${projectsDir.replace(/\\/g,'/')}</p>
+<p class="updated">// DATA PATH: ${projectsDir.replace(/\\/g,'/')}</p>
 </body></html>`;
 }
 
@@ -293,9 +298,9 @@ function activate(context) {
     vscode.commands.registerCommand('claudeUsage.refresh',    updateStatusBar),
   );
 
-  // Primera carga y refresco cada 5 minutos
+  // Primera carga y refresco cada minuto
   updateStatusBar();
-  refreshTimer = setInterval(updateStatusBar, 5 * 60 * 1000);
+  refreshTimer = setInterval(updateStatusBar, 60 * 1000);
   context.subscriptions.push({ dispose: () => clearInterval(refreshTimer) });
 }
 

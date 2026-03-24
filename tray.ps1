@@ -234,7 +234,7 @@ function script:Update-Display {
         if ($script:itemHoy)   { $script:itemHoy.Text   = "  Hoy:        $prefix`$$('{0:F4}' -f $hoy)" }
         if ($script:itemTotal) { $script:itemTotal.Text = "  Total:      $prefix`$$('{0:F4}' -f $total)" }
     } catch {
-        $script:tray.Text = "Claude: error al leer datos"
+        $script:tray.Text = "Claude Cost"
     }
 }
 

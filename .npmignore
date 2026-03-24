@@ -1,0 +1,6 @@
+vscode-extension/
+install.ps1
+INSTALAR.bat
+extension.js
+.git/
+*.vsix

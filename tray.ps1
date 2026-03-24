@@ -225,9 +225,9 @@ function script:Update-Display {
             return
         }
 
-        $mes   = $script:data.CurrentMonth
-        $hoy   = $script:data.Today
-        $total = $script:data.Total
+        $mes   = [double]$script:data["CurrentMonth"]
+        $hoy   = [double]$script:data["Today"]
+        $total = [double]$script:data["Total"]
 
         # Tooltip (Windows limita a 63 chars)
         $tip = "Claude $prefix`$$([math]::Round($mes,2))/mes  $prefix`$$([math]::Round($total,2)) total"

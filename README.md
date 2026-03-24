@@ -111,7 +111,7 @@ La extensión muestra el coste en la barra de estado inferior derecha de VS Code
 Instalar desde el `.vsix` incluido en la carpeta `vscode-extension/`:
 
 ```
-code --install-extension vscode-extension\claude-usage-tracker-1.1.0.vsix
+code --install-extension vscode-extension\claude-usage-tracker-1.1.1.vsix
 ```
 
 **Configuración** (busca "Claude Usage" en la Configuración de VS Code):

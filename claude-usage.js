@@ -535,7 +535,7 @@ console.log(`\n  Reporte: ${outFile}`);
 console.log(`  Modo:    ${IS_PLAN ? 'Plan (equiv. estimado)' : 'API (coste real)'}\n`);
 
 try {
-  execSync(`start "" "${outFile}"`, { stdio: 'ignore', shell: true });
+  execSync(`rundll32 url.dll,FileProtocolHandler "${outFile}"`, { stdio: 'ignore', shell: true });
 } catch {
   console.log(`  Abre manualmente: ${outFile}`);
 }

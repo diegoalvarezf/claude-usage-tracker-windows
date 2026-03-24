@@ -195,9 +195,13 @@ function script:Open-Report {
     try {
         $mode = if ($script:config.mode -eq "plan") { "--plan" } else { "" }
         if ($mode) {
-            Start-Process "node" -ArgumentList "`"$script:USAGE_JS`"", $mode -WindowStyle Hidden
+            $p = Start-Process "node" -ArgumentList "`"$script:USAGE_JS`"", $mode -WindowStyle Hidden -PassThru -Wait
         } else {
-            Start-Process "node" -ArgumentList "`"$script:USAGE_JS`"" -WindowStyle Hidden
+            $p = Start-Process "node" -ArgumentList "`"$script:USAGE_JS`"" -WindowStyle Hidden -PassThru -Wait
+        }
+        $htmlFile = Join-Path $env:TEMP "claude-usage-report.html"
+        if (Test-Path $htmlFile) {
+            Start-Process "rundll32.exe" -ArgumentList "url.dll,FileProtocolHandler `"$htmlFile`""
         }
     } catch {
         [System.Windows.Forms.MessageBox]::Show(

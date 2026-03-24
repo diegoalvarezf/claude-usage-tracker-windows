@@ -75,10 +75,10 @@ function script:Get-Cost($usage, $model) {
     }
     $M = 1000000.0
     return (
-        ([double]($usage.input_tokens                ?? 0) / $M) * $p.i  +
-        ([double]($usage.cache_creation_input_tokens ?? 0) / $M) * $p.cw +
-        ([double]($usage.cache_read_input_tokens     ?? 0) / $M) * $p.cr +
-        ([double]($usage.output_tokens               ?? 0) / $M) * $p.o
+        ([double]$usage.input_tokens                / $M) * $p.i  +
+        ([double]$usage.cache_creation_input_tokens / $M) * $p.cw +
+        ([double]$usage.cache_read_input_tokens     / $M) * $p.cr +
+        ([double]$usage.output_tokens               / $M) * $p.o
     )
 }
 
@@ -102,11 +102,11 @@ function script:Get-UsageData {
                     try {
                         $e = $line | ConvertFrom-Json -ErrorAction Stop
                         if ($e.type -ne "assistant") { continue }
-                        $usage = $e.message?.usage
+                        $usage = $e.message.usage
                         if (-not $usage) { continue }
-                        $model = $e.message?.model ?? ""
+                        $model = if ($e.message.model) { $e.message.model } else { "" }
                         if ($model -eq "<synthetic>") { continue }
-                        $ts = $e.timestamp ?? ""
+                        $ts = if ($e.timestamp) { $e.timestamp } else { "" }
                         if ($ts.Length -lt 7) { continue }
 
                         $cost  = script:Get-Cost $usage $model
@@ -114,7 +114,7 @@ function script:Get-UsageData {
                         $day   = if ($ts.Length -ge 10) { $ts.Substring(0, 10) } else { "" }
 
                         $totalCost += $cost
-                        $byMonth[$month] = ($byMonth[$month] ?? 0.0) + $cost
+                        if ($byMonth.ContainsKey($month)) { $byMonth[$month] += $cost } else { $byMonth[$month] = $cost }
                         if ($day -eq $today) { $todayCost += $cost }
                     } catch { }
                 }
@@ -126,7 +126,7 @@ function script:Get-UsageData {
     return @{
         Total        = [math]::Round($totalCost, 6)
         Today        = [math]::Round($todayCost, 6)
-        CurrentMonth = [math]::Round(($byMonth[$currentMonth] ?? 0.0), 6)
+        CurrentMonth = [math]::Round((if ($byMonth.ContainsKey($currentMonth)) { $byMonth[$currentMonth] } else { 0.0 }), 6)
         Month        = $currentMonth
     }
 }
@@ -135,7 +135,7 @@ function script:Get-UsageData {
 function script:Test-StartupEntry { return (Test-Path $script:STARTUP_VBS) }
 
 function script:Enable-Startup {
-    $psFile = (Resolve-Path $MyInvocation.ScriptName 2>$null) ?? $MyInvocation.MyCommand.Path
+    $psFile = $MyInvocation.MyCommand.Path
     $vbs = @"
 Dim sh : Set sh = CreateObject("WScript.Shell")
 sh.Run "powershell.exe -WindowStyle Hidden -ExecutionPolicy Bypass -File """ & "$psFile" & """", 0, False
@@ -217,7 +217,7 @@ function script:Update-Display {
         $prefix = if ($isPlan) { "~" } else { "" }
 
         if ($null -eq $script:data) {
-            $script:tray.Text = "Claude — sin datos en ~/.claude/projects"
+            $script:tray.Text = "Claude: sin datos en ~/.claude/projects"
             return
         }
 
@@ -234,7 +234,7 @@ function script:Update-Display {
         if ($script:itemHoy)   { $script:itemHoy.Text   = "  Hoy:        $prefix`$$('{0:F4}' -f $hoy)" }
         if ($script:itemTotal) { $script:itemTotal.Text = "  Total:      $prefix`$$('{0:F4}' -f $total)" }
     } catch {
-        $script:tray.Text = "Claude — error al leer datos"
+        $script:tray.Text = "Claude: error al leer datos"
     }
 }
 
@@ -256,13 +256,13 @@ function script:Build-Menu {
     $menu.Items.Add((New-Object System.Windows.Forms.ToolStripSeparator)) | Out-Null
 
     # ── Ver reporte ──
-    $itemReport = New-Object System.Windows.Forms.ToolStripMenuItem("  📊  Ver reporte completo")
+    $itemReport = New-Object System.Windows.Forms.ToolStripMenuItem("  Ver reporte completo")
     $itemReport.Font = New-Object System.Drawing.Font("Segoe UI", 9, [System.Drawing.FontStyle]::Bold)
     $itemReport.Add_Click({ script:Open-Report }) | Out-Null
     $menu.Items.Add($itemReport) | Out-Null
 
     # ── Actualizar ──
-    $itemRefresh = New-Object System.Windows.Forms.ToolStripMenuItem("  ↻  Actualizar ahora")
+    $itemRefresh = New-Object System.Windows.Forms.ToolStripMenuItem("  Actualizar ahora")
     $itemRefresh.Add_Click({ script:Update-Display }) | Out-Null
     $menu.Items.Add($itemRefresh) | Out-Null
 
@@ -271,8 +271,8 @@ function script:Build-Menu {
     # ── Modo facturación ──
     $itemMode = New-Object System.Windows.Forms.ToolStripMenuItem("  Modo de facturación")
 
-    $script:itemApi  = New-Object System.Windows.Forms.ToolStripMenuItem("  API  —  coste real por tokens")
-    $script:itemPlan = New-Object System.Windows.Forms.ToolStripMenuItem("  Plan  —  equivalente estimado (Max/Pro)")
+    $script:itemApi  = New-Object System.Windows.Forms.ToolStripMenuItem("  API  -  coste real por tokens")
+    $script:itemPlan = New-Object System.Windows.Forms.ToolStripMenuItem("  Plan -  equivalente estimado (Max/Pro)")
     $script:itemApi.Checked  = ($script:config.mode -eq "api")
     $script:itemPlan.Checked = ($script:config.mode -eq "plan")
 
@@ -331,7 +331,7 @@ $script:data = $null
 $script:tray = New-Object System.Windows.Forms.NotifyIcon
 $script:tray.Icon    = script:New-TrayIcon
 $script:tray.Visible = $true
-$script:tray.Text    = "Claude Usage Tracker — iniciando..."
+$script:tray.Text    = "Claude Usage Tracker - iniciando..."
 
 # Clic izquierdo y doble clic → abrir reporte
 $script:tray.Add_MouseClick({

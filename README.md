@@ -1,126 +1,87 @@
 # Claude Usage Tracker for Windows
 
-Herramienta para monitorizar en tiempo real el uso de tokens y costes de **Claude Code** en Windows.
-Inspirada en [masorange/ClaudeUsageTracker](https://github.com/masorange/ClaudeUsageTracker) (macOS), portada y mejorada para Windows.
+Monitor de uso de tokens y costes de **Claude Code** en Windows.
+Inspirado en [masorange/ClaudeUsageTracker](https://github.com/masorange/ClaudeUsageTracker) (macOS), portado y mejorado para Windows.
+
+---
+
+## Instalación
+
+```
+npm install -g @diegoalvarezf/claude-usage-tracker
+```
+
+Eso es todo. El instalador:
+- Lanza el icono `$` en la **bandeja del sistema** automáticamente
+- Lo registra para que **arranque con Windows**
+- Deja los comandos `claude-usage` y `claude-usage-tray` disponibles en el PATH
+
+**Requisito único:** [Node.js](https://nodejs.org) v16+ (LTS recomendada)
 
 ---
 
 ## Características
 
-| Feature | Estado |
+| | |
 |---|---|
-| Icono en la bandeja del sistema con gasto del mes | ✅ |
-| Menú contextual con stats (hoy / mes / total) | ✅ |
-| Reporte HTML con tabs (Mes · Proyecto · Modelo) | ✅ |
-| Gasto de hoy y gasto acumulado | ✅ |
-| Export CSV desde el reporte | ✅ |
-| Modo **API** (coste real) y **Plan** (equiv. estimado) | ✅ |
-| Toggle "Iniciar con Windows" desde el menú | ✅ |
+| Icono `$` en la bandeja del sistema con gasto del mes | ✅ |
+| Menú contextual con stats en tiempo real (hoy / mes / total) | ✅ |
+| Reporte HTML con tabs: **Por Mes · Por Proyecto · Por Modelo** | ✅ |
+| Tarjeta de gasto de **hoy** | ✅ |
+| **Export CSV** desde el reporte | ✅ |
+| Modo **API** (coste real) y **Plan** (equiv. estimado Max/Pro) | ✅ |
+| Toggle "Iniciar con Windows" desde el propio menú | ✅ |
 | Extensión VS Code con coste en la barra de estado | ✅ |
 | Sin dependencias externas (solo Node.js) | ✅ |
-| Desplegable desde carpeta compartida (SharePoint/OneDrive) | ✅ |
 
 ---
 
-## Requisitos
-
-- Windows 10 / 11
-- [Node.js](https://nodejs.org) v16+ (LTS recomendada)
-- Claude Code instalado y con al menos una sesión registrada
-
----
-
-## Instalación rápida (recomendada para equipos)
-
-### Desde carpeta compartida (SharePoint / OneDrive de empresa)
-
-Si tienes acceso a la carpeta compartida del equipo, el proceso es:
-
-1. Navega a la carpeta compartida donde está este proyecto
-2. Haz clic derecho sobre `install.ps1` → **"Ejecutar con PowerShell"**
-3. Listo — la bandeja del sistema aparece al instante
-
-> Si Windows bloquea la ejecución, abre PowerShell y ejecuta primero:
-> ```powershell
-> Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
-> ```
-
-**Ventaja del despliegue desde carpeta compartida:**
-Cuando se actualiza la carpeta compartida, todos los usuarios reciben la nueva versión automáticamente en el siguiente reinicio de Windows (el `.vbs` de startup apunta a la carpeta compartida).
-
----
-
-### Instalación manual (desde el repositorio)
-
-```powershell
-git clone https://github.com/diegoalvarezf/claude-usage-tracker-windows.git
-cd claude-usage-tracker-windows
-.\install.ps1
-```
-
----
-
-## Cómo usarlo
+## Uso
 
 ### Bandeja del sistema
 
-Después de instalar, aparece un icono naranja **`$`** en la bandeja (esquina inferior derecha).
+Después de instalar aparece un icono naranja **`$`** en la bandeja (esquina inferior derecha).
 
 | Acción | Resultado |
 |---|---|
-| **Clic izquierdo** | Abre el reporte HTML completo en el navegador |
-| **Doble clic** | Abre el reporte HTML completo |
-| **Clic derecho** | Menú contextual con stats y opciones |
+| **Clic izquierdo** | Abre el reporte HTML en el navegador |
+| **Clic derecho** | Menú con stats y opciones |
 
 **Menú contextual:**
 ```
   Este mes:   $1.2345
   Hoy:        $0.0123
   Total:      $8.9012
-  ─────────────────────────
-  📊  Ver reporte completo
+  ───────────────────────────
+  📊  Ver reporte completo       ← negrita
   ↻  Actualizar ahora
-  ─────────────────────────
+  ───────────────────────────
   Modo de facturación
-    ● API — coste real por tokens
-    ○ Plan — equivalente estimado (Max/Pro)
-  ─────────────────────────
+    ● API  —  coste real por tokens
+    ○ Plan —  equivalente estimado (Max/Pro)
+  ───────────────────────────
   Iniciar con Windows  ✓
-  ─────────────────────────
+  ───────────────────────────
   Salir
+```
+
+### Comandos
+
+```bash
+claude-usage              # reporte HTML — modo API
+claude-usage --plan       # reporte HTML — modo Plan (suscripción plana)
+claude-usage-tray         # relanzar la bandeja si se cierra
 ```
 
 ### Reporte HTML
 
 El reporte incluye tres tabs:
 
-- **Por Mes** — desglose mensual por proyecto con barras de progreso y badges por modelo
+- **Por Mes** — desglose mensual por proyecto, barras de progreso y badges por modelo
 - **Por Proyecto** — ranking acumulado de todos los proyectos
 - **Por Modelo** — tokens y costes por modelo (Sonnet, Opus, Haiku...)
 
-Botón **⬇ Exportar CSV** para descargar todos los datos.
-
-### Script standalone (sin bandeja)
-
-```powershell
-# Modo API (coste real — para usuarios con facturación por tokens)
-node claude-usage.js
-
-# Modo Plan (equiv. estimado — para suscriptores Claude Max/Pro)
-node claude-usage.js --plan
-```
-
-### Extensión VS Code
-
-Aparece `$(credit-card) $X.XX / $Y.YY` en la barra de estado inferior derecha.
-Clic → abre el reporte HTML.
-
-**Configuración** (Archivo → Preferencias → Configuración → busca "Claude Usage"):
-
-| Ajuste | Valores | Por defecto |
-|---|---|---|
-| `claudeUsage.billingMode` | `api` / `plan` | `api` |
-| `claudeUsage.refreshIntervalSeconds` | Número (mín. 10) | `60` |
+Botón **⬇ Exportar CSV** para descargar todos los datos en un clic.
 
 ---
 
@@ -131,7 +92,49 @@ Clic → abre el reporte HTML.
 | **Para quién** | Facturación directa por tokens | Suscripción Claude Max / Pro |
 | **Costes mostrados** | Coste real en USD | Equivalente estimado de API |
 | **Bandeja** | `$1.23 / $9.45` | `~$1.23 / ~$9.45` |
-| **Banner en reporte** | No | Sí, con aviso informativo |
+
+Cambiar modo desde la bandeja: clic derecho → **Modo de facturación**.
+
+---
+
+## Actualizar
+
+```
+npm update -g @diegoalvarezf/claude-usage-tracker
+```
+
+---
+
+## Extensión VS Code (opcional)
+
+La extensión muestra el coste en la barra de estado inferior derecha de VS Code.
+Instalar desde el `.vsix` incluido en la carpeta `vscode-extension/`:
+
+```
+code --install-extension vscode-extension\claude-usage-tracker-1.1.0.vsix
+```
+
+**Configuración** (busca "Claude Usage" en la Configuración de VS Code):
+
+| Ajuste | Valores | Por defecto |
+|---|---|---|
+| `claudeUsage.billingMode` | `api` / `plan` | `api` |
+| `claudeUsage.refreshIntervalSeconds` | Número (mín. 10) | `60` |
+
+---
+
+## Instalación manual (sin npm)
+
+Si prefieres instalar sin npm, desde la carpeta del proyecto:
+
+```powershell
+# Clic derecho → "Ejecutar con PowerShell", o:
+powershell -ExecutionPolicy Bypass -File install.ps1
+```
+
+Útil para despliegue desde una **carpeta compartida de empresa** (SharePoint / OneDrive):
+coloca la carpeta en el recurso compartido y cada compañero ejecuta `install.ps1` una sola vez.
+Las actualizaciones llegan automáticamente al reiniciar Windows.
 
 ---
 
@@ -139,12 +142,15 @@ Clic → abre el reporte HTML.
 
 ```
 claude-usage-tracker-windows/
-├── tray.ps1                 App de bandeja del sistema (PowerShell puro, sin deps)
-├── claude-usage.js          Generador del reporte HTML (Node.js)
-├── install.ps1              Instalador automático
+├── claude-usage.js          Generador del reporte HTML (bin: claude-usage)
+├── tray.ps1                 App de bandeja del sistema (PowerShell puro)
+├── tray-launcher.js         Relanzador de la bandeja (bin: claude-usage-tray)
+├── postinstall.js           Setup automático tras npm install -g
+├── install.ps1              Instalador manual (alternativa al npm)
+├── package.json             Manifiesto npm
 ├── README.md
 └── vscode-extension/
-    ├── extension.js         Código fuente de la extensión
+    ├── extension.js
     ├── package.json
     └── claude-usage-tracker-1.1.0.vsix
 ```
@@ -166,15 +172,13 @@ Precios oficiales de la API de Anthropic (USD por millón de tokens):
 
 ## Cómo funciona
 
-Claude Code guarda el historial en archivos `.jsonl` dentro de:
-```
-%USERPROFILE%\.claude\projects\
-```
-El tracker lee esos archivos, extrae los tokens de uso y calcula el coste según el modelo. No envía datos a ningún servidor externo.
+Claude Code guarda el historial en archivos `.jsonl` en `%USERPROFILE%\.claude\projects\`.
+El tracker los lee directamente, extrae los tokens de uso y calcula el coste por modelo.
+No envía ningún dato a servidores externos.
 
 ---
 
 ## Créditos
 
-- Proyecto original (macOS): [masorange/ClaudeUsageTracker](https://github.com/masorange/ClaudeUsageTracker)
+- Original (macOS, Swift): [masorange/ClaudeUsageTracker](https://github.com/masorange/ClaudeUsageTracker)
 - Adaptación Windows: [diegoalvarezf/claude-usage-tracker-windows](https://github.com/diegoalvarezf/claude-usage-tracker-windows)

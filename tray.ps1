@@ -255,6 +255,7 @@ function script:Update-Display {
 function script:Build-Menu {
     $menu = New-Object System.Windows.Forms.ContextMenuStrip
     $menu.Font = New-Object System.Drawing.Font("Segoe UI", 9)
+    $menu.Add_Opening({ script:Update-Display }) | Out-Null
 
     # ── Stats (no clicables) ──
     $script:itemMes   = New-Object System.Windows.Forms.ToolStripMenuItem("  Este mes:   cargando...")

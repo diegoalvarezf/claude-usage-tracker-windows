@@ -24,8 +24,8 @@ Eso es todo. El instalador:
 
 | | |
 |---|---|
-| Icono `$` en la bandeja del sistema con gasto del mes | ✅ |
-| Menú contextual con stats en tiempo real (hoy / mes / total) | ✅ |
+| Icono naranja en la bandeja del sistema con gasto del mes | ✅ |
+| Popup moderno con stats en tiempo real (hoy / mes / total) | ✅ |
 | Reporte HTML con tabs: **Por Mes · Por Proyecto · Por Modelo** | ✅ |
 | Tarjeta de gasto de **hoy** | ✅ |
 | **Export CSV** desde el reporte | ✅ |
@@ -45,24 +45,21 @@ Después de instalar aparece un icono naranja **`$`** en la bandeja (esquina inf
 | Acción | Resultado |
 |---|---|
 | **Clic izquierdo** | Abre el reporte HTML en el navegador |
-| **Clic derecho** | Menú con stats y opciones |
+| **Clic derecho** | Popup con stats y opciones |
 
-**Menú contextual:**
+**Popup:**
 ```
-  Este mes:   $1.2345
-  Hoy:        $0.0123
-  Total:      $8.9012
-  ───────────────────────────
-  📊  Ver reporte completo       ← negrita
-  ↻  Actualizar ahora
-  ───────────────────────────
-  Modo de facturación
-    ● API  —  coste real por tokens
-    ○ Plan —  equivalente estimado (Max/Pro)
-  ───────────────────────────
-  Iniciar con Windows  ✓
-  ───────────────────────────
-  Salir
+┌─────────────────────────────────┐
+│ Claude Cost                 API │
+├─────────────────────────────────┤
+│ Este mes              $1.2345   │
+│ Hoy                   $0.0123   │
+│ Total                 $8.9012   │
+├─────────────────────────────────┤
+│ [Ver reporte]      [Actualizar] │
+├─────────────────────────────────┤
+│ [Modo: API]  [Arranque]  [Salir]│
+└─────────────────────────────────┘
 ```
 
 ### Comandos
@@ -77,7 +74,7 @@ claude-usage-tray         # relanzar la bandeja si se cierra
 
 El reporte incluye tres tabs:
 
-- **Por Mes** — desglose mensual por proyecto, barras de progreso y badges por modelo
+- **Por Mes** — desglose mensual por proyecto, colapsable por mes, barras de progreso y badges por modelo
 - **Por Proyecto** — ranking acumulado de todos los proyectos
 - **Por Modelo** — tokens y costes por modelo (Sonnet, Opus, Haiku...)
 
@@ -93,7 +90,7 @@ Botón **⬇ Exportar CSV** para descargar todos los datos en un clic.
 | **Costes mostrados** | Coste real en USD | Equivalente estimado de API |
 | **Bandeja** | `$1.23 / $9.45` | `~$1.23 / ~$9.45` |
 
-Cambiar modo desde la bandeja: clic derecho → **Modo de facturación**.
+Cambiar modo desde el popup: clic derecho → botón **Modo: API / Plan**.
 
 ---
 
@@ -146,13 +143,14 @@ claude-usage-tracker-windows/
 ├── tray.ps1                 App de bandeja del sistema (PowerShell puro)
 ├── tray-launcher.js         Relanzador de la bandeja (bin: claude-usage-tray)
 ├── postinstall.js           Setup automático tras npm install -g
+├── orange-logo.svg          Logo Orange (favicon y topbar del reporte)
 ├── install.ps1              Instalador manual (alternativa al npm)
 ├── package.json             Manifiesto npm
 ├── README.md
 └── vscode-extension/
     ├── extension.js
     ├── package.json
-    └── claude-usage-tracker-1.1.0.vsix
+    └── claude-usage-tracker-1.1.2.vsix
 ```
 
 ---

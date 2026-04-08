@@ -28,6 +28,11 @@ Eso es todo. El instalador:
 | Popup moderno con stats en tiempo real (hoy / mes / total) | ✅ |
 | Reporte HTML con tabs: **Por Mes · Por Proyecto · Por Modelo** | ✅ |
 | Tarjeta de gasto de **hoy** | ✅ |
+| **Proyección de gasto a fin de mes** basada en el ritmo actual | ✅ |
+| **Ahorro por cache** — cuánto estás ahorrando gracias al prompt cache | ✅ |
+| **Búsqueda de proyectos** en tiempo real | ✅ |
+| **Ordenación por columna** en todas las tablas | ✅ |
+| **Aviso automático** si no se detecta API key (posible usuario de plan) | ✅ |
 | **Export CSV** desde el reporte | ✅ |
 | Modo **API** (coste real) y **Plan** (equiv. estimado Max/Pro) | ✅ |
 | Toggle "Iniciar con Windows" desde el propio menú | ✅ |

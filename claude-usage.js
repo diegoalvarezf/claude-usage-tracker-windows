@@ -16,7 +16,9 @@ const os   = require('os');
 const { execSync } = require('child_process');
 
 // ─── Modo de facturación ─────────────────────────────────────────────────────
-const IS_PLAN = process.argv.includes('--plan');
+const IS_PLAN       = process.argv.includes('--plan');
+const HAS_API_KEY   = !!(process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_API_KEY);
+const LIKELY_PLAN   = !HAS_API_KEY && !IS_PLAN;
 
 // ─── Logo Orange ──────────────────────────────────────────────────────────────
 const LOGO_PATHS = [
@@ -90,11 +92,12 @@ if (!fs.existsSync(projectsDir)) {
 const byMonth   = {};
 const byProject = {};
 const byModel   = {};
-let   totalCost = 0;
-let   totalTok  = { input: 0, cacheWrite: 0, cacheRead: 0, output: 0 };
-let   todayCost = 0;
-let   todayTok  = { input: 0, cacheWrite: 0, cacheRead: 0, output: 0 };
-const today     = new Date().toISOString().slice(0, 10);
+let   totalCost     = 0;
+let   totalTok      = { input: 0, cacheWrite: 0, cacheRead: 0, output: 0 };
+let   todayCost     = 0;
+let   todayTok      = { input: 0, cacheWrite: 0, cacheRead: 0, output: 0 };
+let   totalSavings  = 0;
+const today         = new Date().toISOString().slice(0, 10);
 
 const projectFolders = fs.readdirSync(projectsDir).filter(f => {
   try { return fs.statSync(path.join(projectsDir, f)).isDirectory(); } catch { return false; }
@@ -127,6 +130,8 @@ for (const folder of projectFolders) {
       if (!month) continue;
 
       const cost = calcCost(usage, model);
+      const p    = getPricing(model);
+      totalSavings += ((usage.cache_read_input_tokens || 0) / 1_000_000) * (p.input - p.cacheRead);
       totalCost += cost;
       totalTok.input      += usage.input_tokens                || 0;
       totalTok.cacheWrite += usage.cache_creation_input_tokens || 0;
@@ -177,6 +182,11 @@ const meses     = Object.keys(byMonth).sort().reverse();
 const mesActual = meses[0] || '';
 const costeMes  = mesActual ? Object.values(byMonth[mesActual]).reduce((s,p)=>s+p.cost,0) : 0;
 const now       = new Date().toLocaleString('es-ES');
+
+const _now         = new Date();
+const dayOfMonth   = _now.getDate();
+const daysInMonth  = new Date(_now.getFullYear(), _now.getMonth() + 1, 0).getDate();
+const burnRate     = dayOfMonth > 0 && costeMes > 0 ? (costeMes / dayOfMonth) * daysInMonth : 0;
 
 const csvRows = [['Mes','Proyecto','Coste USD','Tokens Entrada','Tokens Salida','Cache Escritura','Cache Lectura']];
 for (const [mes, proyectos] of Object.entries(byMonth).sort()) {
@@ -235,19 +245,25 @@ const tabProyecto = (() => {
     const pct = totalCost > 0 ? ((d.cost/totalCost)*100).toFixed(1) : '0.0';
     const bar = Math.max(1, Math.round(parseFloat(pct)));
     return `<tr>
-      <td class="td-proj">${proj}</td>
-      <td class="td-r cost">${$4(d.cost)}</td>
-      <td class="td-r dim">${pct}%</td>
-      <td class="td-r dim">${fmt(d.tokens)}</td>
+      <td class="td-proj" data-val="${proj.toLowerCase()}">${proj}</td>
+      <td class="td-r cost" data-val="${d.cost}">${$4(d.cost)}</td>
+      <td class="td-r dim"  data-val="${pct}">${pct}%</td>
+      <td class="td-r dim"  data-val="${d.tokens}">${fmt(d.tokens)}</td>
       <td><div class="bar-wrap bar-wide"><div class="bar" style="width:${bar}%"></div></div></td>
     </tr>`;
   }).join('');
-  return `<div class="month-card">
-    <table><thead><tr>
-      <th>Proyecto</th>
-      <th class="td-r">${IS_PLAN?'Equiv. estim.':'Coste total'}</th>
-      <th class="td-r">%</th>
-      <th class="td-r">Tokens</th>
+  return `
+  <div style="margin-bottom:12px">
+    <input id="proj-search" type="text" placeholder="Buscar proyecto…" oninput="filterProjects(this.value)"
+      style="width:100%;max-width:340px;padding:8px 12px;background:#1a1a1a;border:1px solid #2c2c2c;border-radius:7px;color:#e8e8e8;font-family:inherit;font-size:13px;outline:none"
+      onfocus="this.style.borderColor='#FF6600'" onblur="this.style.borderColor='#2c2c2c'" />
+  </div>
+  <div class="month-card">
+    <table id="proj-table"><thead><tr>
+      <th data-col="0" class="sortable">Proyecto</th>
+      <th data-col="1" class="sortable td-r">${IS_PLAN?'Equiv. estim.':'Coste total'}</th>
+      <th data-col="2" class="sortable td-r">%</th>
+      <th data-col="3" class="sortable td-r">Tokens</th>
       <th>Distribución</th>
     </tr></thead><tbody>${rows}</tbody></table>
   </div>`;
@@ -284,7 +300,15 @@ const tabModelo = (() => {
 
 // ─── HTML completo ────────────────────────────────────────────────────────────
 const planBanner = IS_PLAN
-  ? `<div class="plan-banner">Modo <strong>Plan</strong> &mdash; importes mostrados son equivalentes estimados de API. Con suscripcion plana (Max/Pro) no se cobra por tokens.</div>`
+  ? `<div class="plan-banner">Modo <strong>Plan</strong> &mdash; importes mostrados son equivalentes estimados de API. Con suscripción plana (Max/Pro) no se cobra por tokens.</div>`
+  : '';
+
+const apiBanner = LIKELY_PLAN
+  ? `<div class="api-warning">
+      <strong>No se ha detectado una API key</strong> en las variables de entorno (<code>ANTHROPIC_API_KEY</code>).
+      Es posible que estés usando un <strong>plan Pro/Max</strong> — en ese caso los costes mostrados son equivalentes estimados, no gastos reales.
+      Si usas API key, asegúrate de que la variable de entorno esté configurada para ver costes reales.
+    </div>`
   : '';
 
 const html = `<!DOCTYPE html>
@@ -363,11 +387,20 @@ ${logoB64
   /* ── Content ─────────────────────────────────────────────────── */
   .content { padding: 28px 32px 48px; max-width: 1100px; margin: 0 auto; }
 
-  /* ── Plan banner ─────────────────────────────────────────────── */
+  /* ── Banners ─────────────────────────────────────────────────── */
   .plan-banner {
     background: rgba(255,102,0,.07); border: 1px solid rgba(255,102,0,.25);
     border-radius: 8px; color: var(--orange2);
     font-size: 13px; padding: 10px 16px; margin-bottom: 24px; line-height: 1.6;
+  }
+  .api-warning {
+    background: rgba(250,204,21,.06); border: 1px solid rgba(250,204,21,.25);
+    border-radius: 8px; color: #fbbf24;
+    font-size: 13px; padding: 10px 16px; margin-bottom: 24px; line-height: 1.6;
+  }
+  .api-warning code {
+    background: rgba(250,204,21,.12); padding: 1px 6px; border-radius: 4px;
+    font-family: monospace; font-size: 12px;
   }
 
   /* ── KPI Cards ───────────────────────────────────────────────── */
@@ -440,6 +473,13 @@ ${logoB64
   .badge  { font-size: 11px; background: #252525; color: var(--dim2); padding: 1px 7px; border-radius: 8px; }
   .empty  { color: var(--dim); padding: 24px 20px; font-size: 13px; }
 
+  /* ── Sortable headers ────────────────────────────────────────── */
+  th.sortable { cursor: pointer; user-select: none; }
+  th.sortable:hover { color: var(--text); }
+  th.sortable::after { content: ' ⇅'; color: var(--dim); font-size: 10px; }
+  th.sortable.asc::after  { content: ' ↑'; color: var(--orange); }
+  th.sortable.desc::after { content: ' ↓'; color: var(--orange); }
+
   /* ── Footer ──────────────────────────────────────────────────── */
   .footer { font-size: 11px; color: #2E2E2E; margin-top: 40px; text-align: center; }
 
@@ -472,6 +512,7 @@ ${logoB64
 <!-- Content -->
 <main class="content">
 
+${apiBanner}
 ${planBanner}
 
 <!-- KPI Cards -->
@@ -490,6 +531,16 @@ ${planBanner}
     <div class="card-label">Hoy</div>
     <div class="card-value secondary">${$4(todayCost)}</div>
     <div class="card-sub">in: ${fmt(todayTok.input)} &middot; out: ${fmt(todayTok.output)}</div>
+  </div>
+  <div class="card${burnRate > 0 ? ' featured' : ''}">
+    <div class="card-label">Proyección mes</div>
+    <div class="card-value${burnRate > 0 ? '' : ' secondary'}">${burnRate > 0 ? $2(burnRate) : '&mdash;'}</div>
+    <div class="card-sub">Día ${dayOfMonth} de ${daysInMonth} &middot; ritmo actual</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Ahorro por cache</div>
+    <div class="card-value secondary" style="color:#4ade80">${totalSavings > 0 ? '+' + $2(totalSavings) : '&mdash;'}</div>
+    <div class="card-sub">${fmt(totalTok.cacheRead)} tokens cache lect.</div>
   </div>
   <div class="card">
     <div class="card-label">Tokens entrada</div>
@@ -540,6 +591,43 @@ function showTab(name, btn) {
   document.getElementById('tab-' + name).classList.add('active');
   btn.classList.add('active');
 }
+
+// ── Búsqueda de proyecto ──────────────────────────────────────────────────────
+function filterProjects(q) {
+  const rows = document.querySelectorAll('#proj-table tbody tr');
+  const ql   = q.toLowerCase();
+  rows.forEach(row => {
+    const name = row.cells[0].dataset.val || '';
+    row.style.display = name.includes(ql) ? '' : 'none';
+  });
+}
+
+// ── Ordenación de tabla ───────────────────────────────────────────────────────
+(function initSort() {
+  document.querySelectorAll('th.sortable').forEach(th => {
+    th.addEventListener('click', () => {
+      const table   = th.closest('table');
+      const tbody   = table.querySelector('tbody');
+      const col     = parseInt(th.dataset.col);
+      const isDesc  = th.classList.contains('desc');
+      const dir     = isDesc ? 1 : -1;
+
+      // Reset all headers in this table
+      table.querySelectorAll('th.sortable').forEach(h => h.classList.remove('asc','desc'));
+      th.classList.add(isDesc ? 'asc' : 'desc');
+
+      const rows = Array.from(tbody.querySelectorAll('tr'));
+      rows.sort((a, b) => {
+        const av = a.cells[col]?.dataset.val ?? '';
+        const bv = b.cells[col]?.dataset.val ?? '';
+        const an = parseFloat(av), bn = parseFloat(bv);
+        if (!isNaN(an) && !isNaN(bn)) return (an - bn) * dir;
+        return av.localeCompare(bv) * dir;
+      });
+      rows.forEach(r => tbody.appendChild(r));
+    });
+  });
+})();
 
 const CSV_DATA = ${JSON.stringify({ rows: csvRows, modelos: csvModelos })};
 

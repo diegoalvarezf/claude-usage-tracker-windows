@@ -11,6 +11,12 @@ Inspirado en [masorange/ClaudeUsageTracker](https://github.com/masorange/ClaudeU
 npm install -g @diegoalvarezf/claude-usage-tracker
 ```
 
+Si el comando anterior falla, instalar directamente desde el repositorio:
+
+```
+npm install -g https://github.com/diegoalvarezf/claude-usage-tracker-windows
+```
+
 Eso es todo. El instalador:
 - Lanza el icono `$` en la **bandeja del sistema** automáticamente
 - Lo registra para que **arranque con Windows**

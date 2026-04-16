@@ -162,7 +162,7 @@ claude-usage-tracker-windows/
 
 ## Precios de los modelos
 
-Precios oficiales de la API de Anthropic (USD por millón de tokens) — _última actualización: abril 2026_:
+Precios oficiales de la API de Anthropic (USD por millón de tokens) — _última actualización: 16 de abril de 2026_:
 
 | Modelo | Entrada | Cache escr. | Cache lect. | Salida |
 |---|---|---|---|---|

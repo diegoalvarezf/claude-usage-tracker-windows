@@ -38,14 +38,17 @@ for (const p of LOGO_PATHS) {
 
 // ─── Precios por modelo (USD / millón de tokens) ─────────────────────────────
 const PRICING = {
-  'claude-sonnet-4-6': { input: 3.00, cacheWrite: 3.75, cacheRead: 0.30, output: 15.00 },
-  'claude-sonnet-3-7': { input: 3.00, cacheWrite: 3.75, cacheRead: 0.30, output: 15.00 },
-  'claude-sonnet-3-5': { input: 3.00, cacheWrite: 3.75, cacheRead: 0.30, output: 15.00 },
+  'claude-opus-4-7':   { input: 5.00,  cacheWrite: 6.25,  cacheRead: 0.50, output: 25.00 },
   'claude-opus-4-6':   { input: 5.00,  cacheWrite: 6.25,  cacheRead: 0.50, output: 25.00 },
   'claude-opus-4-5':   { input: 5.00,  cacheWrite: 6.25,  cacheRead: 0.50, output: 25.00 },
   'claude-opus-4-1':   { input: 15.00, cacheWrite: 18.75, cacheRead: 1.50, output: 75.00 },
   'claude-opus-4':     { input: 15.00, cacheWrite: 18.75, cacheRead: 1.50, output: 75.00 },
   'claude-opus-3':     { input: 15.00, cacheWrite: 18.75, cacheRead: 1.50, output: 75.00 },
+  'claude-sonnet-4-6': { input: 3.00,  cacheWrite: 3.75,  cacheRead: 0.30, output: 15.00 },
+  'claude-sonnet-4-5': { input: 3.00,  cacheWrite: 3.75,  cacheRead: 0.30, output: 15.00 },
+  'claude-sonnet-4':   { input: 3.00,  cacheWrite: 3.75,  cacheRead: 0.30, output: 15.00 },
+  'claude-sonnet-3-7': { input: 3.00,  cacheWrite: 3.75,  cacheRead: 0.30, output: 15.00 },
+  'claude-sonnet-3-5': { input: 3.00,  cacheWrite: 3.75,  cacheRead: 0.30, output: 15.00 },
   'claude-haiku-4-5':  { input: 1.00,  cacheWrite: 1.25,  cacheRead: 0.10, output: 5.00  },
   'claude-haiku-3-5':  { input: 0.80,  cacheWrite: 1.00,  cacheRead: 0.08, output: 4.00  },
   'claude-haiku-3':    { input: 0.25,  cacheWrite: 0.30,  cacheRead: 0.03, output: 1.25  },
@@ -57,7 +60,7 @@ function getPricing(model) {
   for (const key of Object.keys(PRICING)) {
     if (key !== 'default' && model.includes(key.replace('claude-', ''))) return PRICING[key];
   }
-  if (model.includes('opus'))   return PRICING['claude-opus-4-6'];
+  if (model.includes('opus'))   return PRICING['claude-opus-4-7'];
   if (model.includes('haiku'))  return PRICING['claude-haiku-4-5'];
   if (model.includes('sonnet')) return PRICING['claude-sonnet-4-6'];
   return PRICING.default;
@@ -303,13 +306,7 @@ const planBanner = IS_PLAN
   ? `<div class="plan-banner">Modo <strong>Plan</strong> &mdash; importes mostrados son equivalentes estimados de API. Con suscripción plana (Max/Pro) no se cobra por tokens.</div>`
   : '';
 
-const apiBanner = LIKELY_PLAN
-  ? `<div class="api-warning">
-      <strong>No se ha detectado una API key</strong> en las variables de entorno (<code>ANTHROPIC_API_KEY</code>).
-      Es posible que estés usando un <strong>plan Pro/Max</strong> — en ese caso los costes mostrados son equivalentes estimados, no gastos reales.
-      Si usas API key, asegúrate de que la variable de entorno esté configurada para ver costes reales.
-    </div>`
-  : '';
+const apiBanner = '';
 
 const html = `<!DOCTYPE html>
 <html lang="es">
@@ -518,29 +515,14 @@ ${planBanner}
 <!-- KPI Cards -->
 <div class="cards">
   <div class="card featured">
-    <div class="card-label">${IS_PLAN ? 'Equiv. total estimado' : 'Coste total'}</div>
-    <div class="card-value">${$4(totalCost)}</div>
-    <div class="card-sub">${projectFolders.length} proyectos &middot; ${meses.length} meses</div>
-  </div>
-  <div class="card">
     <div class="card-label">Mes actual</div>
-    <div class="card-value secondary">${mesActual ? $4(costeMes) : '&mdash;'}</div>
-    <div class="card-sub">${mesActual ? monthLabel(mesActual) : '&mdash;'}</div>
+    <div class="card-value">${mesActual ? $4(costeMes) : '&mdash;'}</div>
+    <div class="card-sub">${mesActual ? monthLabel(mesActual) : '&mdash;'} &middot; ${projectFolders.length} proyectos</div>
   </div>
   <div class="card">
     <div class="card-label">Hoy</div>
     <div class="card-value secondary">${$4(todayCost)}</div>
     <div class="card-sub">in: ${fmt(todayTok.input)} &middot; out: ${fmt(todayTok.output)}</div>
-  </div>
-  <div class="card${burnRate > 0 ? ' featured' : ''}">
-    <div class="card-label">Proyección mes</div>
-    <div class="card-value${burnRate > 0 ? '' : ' secondary'}">${burnRate > 0 ? $2(burnRate) : '&mdash;'}</div>
-    <div class="card-sub">Día ${dayOfMonth} de ${daysInMonth} &middot; ritmo actual</div>
-  </div>
-  <div class="card">
-    <div class="card-label">Ahorro por cache</div>
-    <div class="card-value secondary" style="color:#4ade80">${totalSavings > 0 ? '+' + $2(totalSavings) : '&mdash;'}</div>
-    <div class="card-sub">${fmt(totalTok.cacheRead)} tokens cache lect.</div>
   </div>
   <div class="card">
     <div class="card-label">Tokens entrada</div>

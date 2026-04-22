@@ -371,8 +371,6 @@ function script:New-Popup {
     # ── Acciones ─────────────────────────────────────────────────────────────
     $btnH = 28
     AddBtn "Ver reporte" 12 $y 140 $btnH { $script:popup.Hide(); script:Open-Report } | Out-Null
-    $refreshX = 158
-    AddBtn "Actualizar" $refreshX $y 98 $btnH { script:Update-Display } | Out-Null
     $y += $btnH + 8
 
     AddSep $y; $y += 10

@@ -34,11 +34,8 @@ Eso es todo. El instalador:
 | Popup moderno con stats en tiempo real (hoy / mes / total) | ✅ |
 | Reporte HTML con tabs: **Por Mes · Por Proyecto · Por Modelo** | ✅ |
 | Tarjeta de gasto de **hoy** | ✅ |
-| **Proyección de gasto a fin de mes** basada en el ritmo actual | ✅ |
-| **Ahorro por cache** — cuánto estás ahorrando gracias al prompt cache | ✅ |
 | **Búsqueda de proyectos** en tiempo real | ✅ |
 | **Ordenación por columna** en todas las tablas | ✅ |
-| **Aviso automático** si no se detecta API key (posible usuario de plan) | ✅ |
 | **Export CSV** desde el reporte | ✅ |
 | Modo **API** (coste real) y **Plan** (equiv. estimado Max/Pro) | ✅ |
 | Toggle "Iniciar con Windows" desde el propio menú | ✅ |
@@ -67,7 +64,7 @@ Después de instalar aparece un icono naranja **`$`** en la bandeja (esquina inf
 │ Hoy                   $0.0123   │
 │ Total                 $8.9012   │
 ├─────────────────────────────────┤
-│ [Ver reporte]      [Actualizar] │
+│ [Ver reporte]                   │
 ├─────────────────────────────────┤
 │ [Modo: API]  [Arranque]  [Salir]│
 └─────────────────────────────────┘
@@ -168,13 +165,13 @@ claude-usage-tracker-windows/
 
 ## Precios de los modelos
 
-Precios oficiales de la API de Anthropic (USD por millón de tokens) — _última actualización: 16 de abril de 2026_:
+Precios oficiales de la API de Anthropic (USD por millón de tokens) — _última actualización: 22 de abril de 2026_:
 
 | Modelo | Entrada | Cache escr. | Cache lect. | Salida |
 |---|---|---|---|---|
-| Sonnet 4.6 / 3.7 / 3.5 | $3.00 | $3.75 | $0.30 | $15.00 |
-| Opus 4.6 / 4.5 | $5.00 | $6.25 | $0.50 | $25.00 |
-| Opus 3 | $15.00 | $18.75 | $1.50 | $75.00 |
+| Opus 4.7 / 4.6 / 4.5 | $5.00 | $6.25 | $0.50 | $25.00 |
+| Opus 4.1 / 4 / 3 | $15.00 | $18.75 | $1.50 | $75.00 |
+| Sonnet 4.6 / 4.5 / 4 / 3.7 / 3.5 | $3.00 | $3.75 | $0.30 | $15.00 |
 | Haiku 4.5 | $1.00 | $1.25 | $0.10 | $5.00 |
 | Haiku 3.5 | $0.80 | $1.00 | $0.08 | $4.00 |
 | Haiku 3 | $0.25 | $0.30 | $0.03 | $1.25 |

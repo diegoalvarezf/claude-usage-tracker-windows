@@ -7,14 +7,23 @@ Inspirado en [masorange/ClaudeUsageTracker](https://github.com/masorange/ClaudeU
 
 ## Instalación
 
+**Recomendado — pnpm** (más seguro: bloquea scripts de instalación por defecto y pide confirmación explícita):
+
+```
+pnpm add -g @diegoalvarezf/claude-usage-tracker
+pnpm approve-builds   # aprueba el script de setup de la bandeja del sistema
+```
+
+**Alternativa — npm:**
+
 ```
 npm install -g @diegoalvarezf/claude-usage-tracker
 ```
 
-Si el comando anterior falla, instalar directamente desde el repositorio:
+Si alguno de los comandos anteriores falla, instalar directamente desde el repositorio:
 
 ```
-npm install -g https://github.com/diegoalvarezf/claude-usage-tracker-windows
+pnpm add -g https://github.com/diegoalvarezf/claude-usage-tracker-windows
 ```
 
 Eso es todo. El instalador:
@@ -23,6 +32,8 @@ Eso es todo. El instalador:
 - Deja los comandos `claude-usage` y `claude-usage-tray` disponibles en el PATH
 
 **Requisito único:** [Node.js](https://nodejs.org) v16+ (LTS recomendada)
+
+> **Nota sobre el script `postinstall`:** este paquete ejecuta un script automático al instalarse (`postinstall.js`) que lanza la bandeja del sistema y registra el arranque con Windows. Es el comportamiento esperado e intencionado. Por eso se recomienda pnpm, que muestra exactamente qué scripts se van a ejecutar y pide aprobación antes de hacerlo.
 
 ---
 
@@ -105,6 +116,12 @@ Cambiar modo desde el popup: clic derecho → botón **Modo: API / Plan**.
 ## Actualizar
 
 ```
+pnpm update -g @diegoalvarezf/claude-usage-tracker
+```
+
+O con npm:
+
+```
 npm update -g @diegoalvarezf/claude-usage-tracker
 ```
 
@@ -165,7 +182,7 @@ claude-usage-tracker-windows/
 
 ## Precios de los modelos
 
-Precios oficiales de la API de Anthropic (USD por millón de tokens) — _última actualización: 22 de abril de 2026_:
+Precios oficiales de la API de Anthropic (USD por millón de tokens) — _última actualización: 12 de mayo de 2026_:
 
 | Modelo | Entrada | Cache escr. | Cache lect. | Salida |
 |---|---|---|---|---|

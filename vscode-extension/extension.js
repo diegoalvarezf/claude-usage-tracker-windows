@@ -4,52 +4,9 @@ const path   = require('path');
 const os     = require('os');
 const { execSync } = require('child_process');
 
-// ─── Precios por modelo (USD por millón de tokens) ────────────────────────────
-const PRICING = {
-  'claude-opus-4-7':   { input: 5.00,  cacheWrite: 6.25,  cacheRead: 0.50, output: 25.00 },
-  'claude-opus-4-6':   { input: 5.00,  cacheWrite: 6.25,  cacheRead: 0.50, output: 25.00 },
-  'claude-opus-4-5':   { input: 5.00,  cacheWrite: 6.25,  cacheRead: 0.50, output: 25.00 },
-  'claude-opus-4-1':   { input: 15.00, cacheWrite: 18.75, cacheRead: 1.50, output: 75.00 },
-  'claude-opus-4':     { input: 15.00, cacheWrite: 18.75, cacheRead: 1.50, output: 75.00 },
-  'claude-opus-3':     { input: 15.00, cacheWrite: 18.75, cacheRead: 1.50, output: 75.00 },
-  'claude-sonnet-4-6': { input: 3.00,  cacheWrite: 3.75,  cacheRead: 0.30, output: 15.00 },
-  'claude-sonnet-4-5': { input: 3.00,  cacheWrite: 3.75,  cacheRead: 0.30, output: 15.00 },
-  'claude-sonnet-4':   { input: 3.00,  cacheWrite: 3.75,  cacheRead: 0.30, output: 15.00 },
-  'claude-sonnet-3-7': { input: 3.00,  cacheWrite: 3.75,  cacheRead: 0.30, output: 15.00 },
-  'claude-sonnet-3-5': { input: 3.00,  cacheWrite: 3.75,  cacheRead: 0.30, output: 15.00 },
-  'claude-haiku-4-5':  { input: 1.00,  cacheWrite: 1.25,  cacheRead: 0.10, output: 5.00  },
-  'claude-haiku-3-5':  { input: 0.80,  cacheWrite: 1.00,  cacheRead: 0.08, output: 4.00  },
-  'claude-haiku-3':    { input: 0.25,  cacheWrite: 0.30,  cacheRead: 0.03, output: 1.25  },
-  default:             { input: 3.00,  cacheWrite: 3.75,  cacheRead: 0.30, output: 15.00 },
-};
-
-function getPricing(model) {
-  if (!model) return PRICING.default;
-  for (const key of Object.keys(PRICING)) {
-    if (key !== 'default' && model.includes(key.replace('claude-', ''))) return PRICING[key];
-  }
-  if (model.includes('opus'))   return PRICING['claude-opus-4-7'];
-  if (model.includes('haiku'))  return PRICING['claude-haiku-4-5'];
-  if (model.includes('sonnet')) return PRICING['claude-sonnet-4-6'];
-  return PRICING.default;
-}
-
-function calcCost(usage, model) {
-  const p = getPricing(model);
-  const M = 1_000_000;
-  return (
-    ((usage.input_tokens                || 0) / M) * p.input      +
-    ((usage.cache_creation_input_tokens || 0) / M) * p.cacheWrite +
-    ((usage.cache_read_input_tokens     || 0) / M) * p.cacheRead  +
-    ((usage.output_tokens               || 0) / M) * p.output
-  );
-}
-
-function cleanProjectName(folder) {
-  const parts = folder.split('---').filter(Boolean);
-  const last  = parts[parts.length - 1] || folder;
-  return last.replace(/^[A-Z]--[^-]+-[^-]+-/i, '') || last;
-}
+// ─── Datos ───────────────────────────────────────────────────────────────────
+// lib/ es una copia de ../lib (npm run sync-extension) para que el .vsix sea autocontenido
+const { loadUsage } = require('./lib/usage');
 
 function monthLabel(m) {
   const [y, mo] = m.split('-');
@@ -69,85 +26,15 @@ function fmtCost2(n, isPlan) {
 
 // ─── Parseo de datos ──────────────────────────────────────────────────────────
 function parseUsage() {
-  const projectsDir = path.join(os.homedir(), '.claude', 'projects');
-  if (!fs.existsSync(projectsDir)) return null;
-
-  const byMonth   = {};
-  const byProject = {};
-  const byModel   = {};
-  let   totalCost = 0;
-  let   totalTok  = { input: 0, cacheWrite: 0, cacheRead: 0, output: 0 };
-  let   todayCost = 0;
-  let   todayTok  = { input: 0, cacheWrite: 0, cacheRead: 0, output: 0 };
-  const today     = new Date().toISOString().slice(0, 10);
-
-  const projectFolders = fs.readdirSync(projectsDir).filter(f => {
-    try { return fs.statSync(path.join(projectsDir, f)).isDirectory(); } catch { return false; }
-  });
-
-  for (const folder of projectFolders) {
-    const projectName = cleanProjectName(folder);
-    const folderPath  = path.join(projectsDir, folder);
-    let   jsonlFiles;
-    try { jsonlFiles = fs.readdirSync(folderPath).filter(f => f.endsWith('.jsonl')); }
-    catch { continue; }
-
-    for (const file of jsonlFiles) {
-      let lines;
-      try { lines = fs.readFileSync(path.join(folderPath, file), 'utf8').split('\n').filter(Boolean); }
-      catch { continue; }
-
-      for (const line of lines) {
-        let entry;
-        try { entry = JSON.parse(line); } catch { continue; }
-
-        if (entry.type !== 'assistant') continue;
-        const usage = entry.message && entry.message.usage;
-        if (!usage) continue;
-
-        const model     = (entry.message && entry.message.model) || 'unknown';
-        if (model === '<synthetic>') continue;
-        const timestamp = entry.timestamp || '';
-        const month     = timestamp.slice(0, 7);
-        if (!month) continue;
-        const day = timestamp.slice(0, 10);
-
-        const cost = calcCost(usage, model);
-        totalCost += cost;
-
-        totalTok.input      += usage.input_tokens                || 0;
-        totalTok.cacheWrite += usage.cache_creation_input_tokens || 0;
-        totalTok.cacheRead  += usage.cache_read_input_tokens     || 0;
-        totalTok.output     += usage.output_tokens               || 0;
-
-        if (day === today) {
-          todayCost += cost;
-          todayTok.input      += usage.input_tokens                || 0;
-          todayTok.cacheWrite += usage.cache_creation_input_tokens || 0;
-          todayTok.cacheRead  += usage.cache_read_input_tokens     || 0;
-          todayTok.output     += usage.output_tokens               || 0;
-        }
-
-        if (!byMonth[month])              byMonth[month] = {};
-        if (!byMonth[month][projectName]) byMonth[month][projectName] = { cost: 0, models: {} };
-        byMonth[month][projectName].cost += cost;
-        byMonth[month][projectName].models[model] = (byMonth[month][projectName].models[model] || 0) + cost;
-
-        if (!byProject[projectName]) byProject[projectName] = { cost: 0, tokens: 0 };
-        byProject[projectName].cost   += cost;
-        byProject[projectName].tokens += (usage.input_tokens || 0) + (usage.output_tokens || 0);
-
-        if (!byModel[model]) byModel[model] = { cost: 0, input: 0, cacheWrite: 0, cacheRead: 0, output: 0 };
-        byModel[model].cost       += cost;
-        byModel[model].input      += usage.input_tokens                || 0;
-        byModel[model].cacheWrite += usage.cache_creation_input_tokens || 0;
-        byModel[model].cacheRead  += usage.cache_read_input_tokens     || 0;
-        byModel[model].output     += usage.output_tokens               || 0;
-      }
-    }
-  }
-
-  return { byMonth, byProject, byModel, totalCost, totalTok, todayCost, todayTok, projectFolders, projectsDir };
+  const d = loadUsage();
+  if (!d.projectDirs.length) return null;
+  return {
+    byMonth: d.byMonth, byProject: d.byProject, byModel: d.byModel,
+    totalCost: d.totals.cost, totalTok: d.totals.tok,
+    todayCost: d.todayTot.cost, todayTok: d.todayTot.tok,
+    monthCost: d.monthCost, thisMonth: d.thisMonth,
+    projectFolders: Object.keys(d.byProject), projectsDir: d.projectDirs.join(', '),
+  };
 }
 
 // ─── Generación del HTML ──────────────────────────────────────────────────────
@@ -220,10 +107,8 @@ function generateHtml(data, isPlan) {
       </tr>`;
     }).join('');
 
-  const mesActual      = meses[0] || '';
-  const costeMesActual = mesActual
-    ? Object.values(byMonth[mesActual]).reduce((s,p) => s+p.cost, 0)
-    : 0;
+  const mesActual      = data.thisMonth;
+  const costeMesActual = data.monthCost;
   const now = new Date().toLocaleString('es-ES');
 
   return `<!DOCTYPE html>
@@ -353,10 +238,8 @@ function updateStatusBar() {
     }
 
     const meses     = Object.keys(data.byMonth).sort().reverse();
-    const mesActual = meses[0] || '';
-    const costeMes  = mesActual
-      ? Object.values(data.byMonth[mesActual]).reduce((s,p) => s+p.cost, 0)
-      : 0;
+    const mesActual = data.thisMonth;
+    const costeMes  = data.monthCost;
 
     const prefix = isPlan ? '~' : '';
     statusBarItem.text = `$(credit-card) ${prefix}$${costeMes.toFixed(2)} / ${prefix}$${data.totalCost.toFixed(2)}`;

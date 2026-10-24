@@ -42,16 +42,17 @@ Eso es todo. El instalador:
 | | |
 |---|---|
 | Icono naranja en la bandeja del sistema con gasto del mes | ✅ |
-| Popup moderno con stats en tiempo real (hoy / mes / total) | ✅ |
-| Reporte HTML con tabs: **Por Mes · Por Proyecto · Por Modelo** | ✅ |
-| Tarjeta de gasto de **hoy** | ✅ |
-| **Búsqueda de proyectos** en tiempo real | ✅ |
-| **Ordenación por columna** en todas las tablas | ✅ |
-| **Export CSV** desde el reporte | ✅ |
+| Popup con stats en tiempo real (hoy / mes / total) | ✅ |
+| Reporte HTML rediseñado: mes actual con **previsión** y comparativa, gasto diario, coste mensual por modelo | ✅ |
+| **Consejos personalizados** a partir de tu uso real (ahorro por modelo, caché, PDFs, cambios grandes...) | ✅ |
+| Recomienda las herramientas del ecosistema (**docdiet, context-pilot, autoskills, codestack**) y detecta si ya las tienes activas | ✅ |
+| **Claude Code + Codex CLI (OpenAI) + Gemini CLI (Google)** en el mismo reporte | ✅ |
+| Precios oficiales al día: caché de 5 min / 1 h, fast mode, contexto largo, *fallback* entre modelos, web search | ✅ |
+| Respuestas duplicadas y subagentes contados correctamente | ✅ |
+| Tablas ordenables, búsqueda de proyectos, export CSV, modo claro/oscuro | ✅ |
 | Modo **API** (coste real) y **Plan** (equiv. estimado Max/Pro) | ✅ |
-| Toggle "Iniciar con Windows" desde el propio menú | ✅ |
 | Extensión VS Code con coste en la barra de estado | ✅ |
-| Sin dependencias externas (solo Node.js) | ✅ |
+| Sin dependencias externas (solo Node.js), 100 % local | ✅ |
 
 ---
 
@@ -91,13 +92,25 @@ claude-usage-tray         # relanzar la bandeja si se cierra
 
 ### Reporte HTML
 
-El reporte incluye tres tabs:
+- **Este mes**: gasto, previsión a fin de mes y comparativa con el mismo tramo del mes anterior
+- **Consejos para ti**: calculados con tu uso real (ver abajo)
+- **Gasto diario** (30 días / 90 días / 1 año) y **coste mensual por modelo**, con detalle al pasar el ratón
+- Pestañas **Proyectos · Modelos · Meses**, con búsqueda y ordenación
+- **Herramientas de la casa**: docdiet, context-pilot, autoskills y codestack
+- Botón **CSV** para descargar todos los datos
 
-- **Por Mes** — desglose mensual por proyecto, colapsable por mes, barras de progreso y badges por modelo
-- **Por Proyecto** — ranking acumulado de todos los proyectos
-- **Por Modelo** — tokens y costes por modelo (Sonnet, Opus, Haiku...)
+### Consejos
 
-Botón **⬇ Exportar CSV** para descargar todos los datos en un clic.
+| Consejo | Cuándo aparece |
+|---|---|
+| Pasar a los modelos actuales | Este mes has usado modelos antiguos y su sucesor te saldría más barato con el mismo uso |
+| docdiet | Claude ha leído PDFs (estima los tokens que ahorra convertirlos a Markdown) |
+| context-pilot | Sesiones que editan 20 archivos o más |
+| autoskills | Proyectos con gasto relevante sin `.claude/skills` |
+| codestack | Siempre, para descubrir servidores MCP, skills y stacks |
+| Caché | Porcentaje de la entrada que sale de la caché y lo que te ha ahorrado |
+
+Si docdiet o context-pilot ya están instalados como hooks en `~/.claude/settings.json`, el consejo lo indica en lugar de recomendar instalarlos.
 
 ---
 
@@ -133,7 +146,7 @@ La extensión muestra el coste en la barra de estado inferior derecha de VS Code
 Instalar desde el `.vsix` incluido en la carpeta `vscode-extension/`:
 
 ```
-code --install-extension vscode-extension\claude-usage-tracker-1.1.1.vsix
+code --install-extension vscode-extension\claude-usage-tracker-1.2.0.vsix
 ```
 
 **Configuración** (busca "Claude Usage" en la Configuración de VS Code):
@@ -165,6 +178,14 @@ Las actualizaciones llegan automáticamente al reiniciar Windows.
 ```
 claude-usage-tracker-windows/
 ├── claude-usage.js          Generador del reporte HTML (bin: claude-usage)
+├── lib/
+│   ├── pricing.js           Precios oficiales de Anthropic y cálculo de coste
+│   ├── pricing-others.js    Precios de OpenAI y Gemini
+│   ├── usage.js             Lectura, deduplicación y agregación de los logs
+│   ├── providers/           Lectores de Codex CLI y Gemini CLI
+│   ├── insights.js          Consejos y ecosistema de herramientas
+│   └── report.js            Reporte HTML
+├── test/                    Tests (npm test)
 ├── tray.ps1                 App de bandeja del sistema (PowerShell puro)
 ├── tray-launcher.js         Relanzador de la bandeja (bin: claude-usage-tray)
 ├── postinstall.js           Setup automático tras npm install -g
@@ -175,31 +196,55 @@ claude-usage-tracker-windows/
 └── vscode-extension/
     ├── extension.js
     ├── package.json
-    └── claude-usage-tracker-1.1.2.vsix
+    └── claude-usage-tracker-1.2.0.vsix
 ```
 
 ---
 
 ## Precios de los modelos
 
-Precios oficiales de la API de Anthropic (USD por millón de tokens) — _última actualización: 12 de mayo de 2026_:
+Precios oficiales de la API de Anthropic (USD por millón de tokens) — _última revisión: 24 de octubre de 2026_.
+Fuente: [platform.claude.com/docs/en/about-claude/pricing](https://platform.claude.com/docs/en/about-claude/pricing). Están en [`lib/pricing.js`](lib/pricing.js).
 
-| Modelo | Entrada | Cache escr. | Cache lect. | Salida |
-|---|---|---|---|---|
-| Opus 4.7 / 4.6 / 4.5 | $5.00 | $6.25 | $0.50 | $25.00 |
-| Opus 4.1 / 4 / 3 | $15.00 | $18.75 | $1.50 | $75.00 |
-| Sonnet 4.6 / 4.5 / 4 / 3.7 / 3.5 | $3.00 | $3.75 | $0.30 | $15.00 |
-| Haiku 4.5 | $1.00 | $1.25 | $0.10 | $5.00 |
-| Haiku 3.5 | $0.80 | $1.00 | $0.08 | $4.00 |
-| Haiku 3 | $0.25 | $0.30 | $0.03 | $1.25 |
+| Modelo | Entrada | Cache escr. 5 min | Cache escr. 1 h | Cache lect. | Salida |
+|---|---|---|---|---|---|
+| Fable 5.1 / Mythos 5.1 | $10.00 | $12.50 | $20.00 | $0.25 | $50.00 |
+| Fable 5 / Mythos 5 | $10.00 | $12.50 | $20.00 | $1.00 | $50.00 |
+| Opus 5.5 | $4.00 | $5.00 | $8.00 | $0.20 | $20.00 |
+| Opus 5 / 4.8 / 4.7 / 4.6 / 4.5 | $5.00 | $6.25 | $10.00 | $0.50 | $25.00 |
+| Opus 4.1 / 4 / 3 _(retirados)_ | $15.00 | $18.75 | $30.00 | $1.50 | $75.00 |
+| Sonnet 5.5 | $2.00 | $2.50 | $4.00 | $0.10 | $10.00 |
+| Sonnet 5 | $2.00 | $2.50 | $4.00 | $0.20 | $10.00 |
+| Sonnet 4.6 / 4.5 / 4 / 3.7 / 3.5 | $3.00 | $3.75 | $6.00 | $0.30 | $15.00 |
+| Haiku 5.5 (prompt ≤ 100K) | $0.10 | $0.125 | $0.20 | $0.01 | $0.50 |
+| Haiku 5.5 (prompt > 100K) | $0.50 | $0.625 | $1.00 | $0.05 | $2.50 |
+| Haiku 4.5 | $1.00 | $1.25 | $2.00 | $0.10 | $5.00 |
+| Haiku 3.5 _(retirado)_ | $0.80 | $1.00 | $1.60 | $0.08 | $4.00 |
+| Haiku 3 _(retirado)_ | $0.25 | $0.30 | $0.50 | $0.03 | $1.25 |
+
+Además se tienen en cuenta:
+- **Fast mode** (`speed: "fast"`): Opus 5.5 a $8 / $40; Opus 5 y 4.8 a $10 / $50.
+- **Inferencia solo en EE. UU.** (`inference_geo: "us"`): ×1.1 en modelos 4.6 o posteriores.
+- **Web search**: $10 por cada 1.000 búsquedas (web fetch no tiene coste extra).
+- **Fallback** de un modelo a otro: cada intento se factura con el precio de su propio modelo.
+
+Los precios de Opus 3, Sonnet 3.7 y Haiku 3 ya no aparecen en la página oficial (modelos retirados); se usa el último precio publicado.
+
+Los precios de **OpenAI** (GPT-6, GPT-5.x, o-series...) y **Gemini** (4 Argon, 3.x, 2.5...) están en [`lib/pricing-others.js`](lib/pricing-others.js), con sus tramos de contexto largo (más de 272K / 200K tokens) y las subidas de precio ya anunciadas por Google (Gemini 4 Argon desde el 1-12-2026; 3.8/3.6 Flash desde el 1-1-2027).
 
 ---
 
 ## Cómo funciona
 
-Claude Code guarda el historial en archivos `.jsonl` en `%USERPROFILE%\.claude\projects\`.
-El tracker los lee directamente, extrae los tokens de uso y calcula el coste por modelo.
-No envía ningún dato a servidores externos.
+Todo se lee de los logs locales; no se envía ningún dato a servidores externos.
+
+| Herramienta | Logs | Notas |
+|---|---|---|
+| **Claude Code** | `%USERPROFILE%\.claude\projects\` (o `CLAUDE_CONFIG_DIR`), subagentes incluidos | Cada respuesta aparece varias veces en el log: se deduplica por `message.id` + `requestId`. Con *fallback*, cada intento se factura con su modelo. |
+| **Codex CLI** | `%USERPROFILE%\.codex\sessions\` y `archived_sessions\` (o `CODEX_HOME`) | Usa `token_usage_record` si existe; si no, deltas del contador acumulado `token_count`, ignorando repeticiones, reinicios y eventos copiados por los *forks*. |
+| **Gemini CLI** | `%USERPROFILE%\.gemini\tmp\<proyecto>\chats\` (o `GEMINI_CLI_HOME`) | Cada mensaje se reescribe varias veces: se deduplica por `id`. Los *thoughts* se cobran como salida. Gemini CLI borra el historial de más de 30 días por defecto, y sus llamadas auxiliares (router, resúmenes) no quedan registradas. |
+
+Bandeja, reporte y extensión comparten el mismo cálculo (`lib/`), así que siempre muestran la misma cifra.
 
 ---
 

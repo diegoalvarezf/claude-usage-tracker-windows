@@ -1,7 +1,7 @@
 {
   "name": "@diegoalvarezf/claude-usage-tracker",
-  "version": "1.2.1",
-  "description": "Monitor de uso y costes de Claude Code para Windows — bandeja del sistema + reporte HTML con tabs",
+  "version": "2.0.0",
+  "description": "Monitor de uso y costes de Claude Code (y Codex CLI / Gemini CLI) para Windows — bandeja del sistema + reporte HTML",
   "keywords": [
     "claude",
     "anthropic",
@@ -9,7 +9,10 @@
     "usage",
     "tracker",
     "windows",
-    "cost"
+    "cost",
+    "openai",
+    "gemini",
+    "codex"
   ],
   "author": "diegoalvarezf",
   "license": "MIT",
@@ -28,10 +31,13 @@
     "claude-usage-tray": "tray-launcher.js"
   },
   "scripts": {
-    "postinstall": "node postinstall.js"
+    "postinstall": "node postinstall.js",
+    "test": "node test/pricing.test.js && node test/providers.test.js",
+    "sync-extension": "node -e \"require('fs').cpSync('lib','vscode-extension/lib',{recursive:true})\""
   },
   "files": [
     "claude-usage.js",
+    "lib/",
     "tray.ps1",
     "tray-launcher.js",
     "postinstall.js",

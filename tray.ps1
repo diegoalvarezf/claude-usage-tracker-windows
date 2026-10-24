@@ -52,88 +52,31 @@ function script:Save-Config {
 
 $script:config = Load-Config
 
-# ─── Precios (USD / millón de tokens) ────────────────────────────────────────
-$script:PRICING = @{
-    "sonnet-4-6" = @{ i = 3.00;  cw = 3.75;  cr = 0.30; o = 15.00 }
-    "sonnet-3-7" = @{ i = 3.00;  cw = 3.75;  cr = 0.30; o = 15.00 }
-    "sonnet-3-5" = @{ i = 3.00;  cw = 3.75;  cr = 0.30; o = 15.00 }
-    "opus-4-6"   = @{ i = 15.00; cw = 18.75; cr = 1.50; o = 75.00 }
-    "opus-4-5"   = @{ i = 15.00; cw = 18.75; cr = 1.50; o = 75.00 }
-    "opus-3"     = @{ i = 15.00; cw = 18.75; cr = 1.50; o = 75.00 }
-    "haiku-4-5"  = @{ i = 0.80;  cw = 1.00;  cr = 0.08; o = 4.00  }
-    "haiku-3-5"  = @{ i = 0.80;  cw = 1.00;  cr = 0.08; o = 4.00  }
-    "haiku-3"    = @{ i = 0.25;  cw = 0.30;  cr = 0.03; o = 1.25  }
-    "default"    = @{ i = 3.00;  cw = 3.75;  cr = 0.30; o = 15.00 }
-}
-
-function script:Get-Cost($usage, $model) {
-    $p = $script:PRICING["default"]
-    if ($model) {
-        foreach ($key in $script:PRICING.Keys) {
-            if ($key -ne "default" -and $model -like "*$key*") { $p = $script:PRICING[$key]; break }
-        }
-    }
-    $M = 1000000.0
-    return (
-        ([double]$usage.input_tokens                / $M) * $p.i  +
-        ([double]$usage.cache_creation_input_tokens / $M) * $p.cw +
-        ([double]$usage.cache_read_input_tokens     / $M) * $p.cr +
-        ([double]$usage.output_tokens               / $M) * $p.o
-    )
-}
-
 # ─── Lectura de datos ─────────────────────────────────────────────────────────
+# Los precios y el cálculo viven en lib/ (Node) para que bandeja, reporte y extensión
+# den exactamente la misma cifra.
 function script:Get-UsageData {
-    $projectsDir = Join-Path $env:USERPROFILE ".claude\projects"
-    if (-not (Test-Path $projectsDir)) { return $null }
-
-    $totalCost    = 0.0
-    $todayCost    = 0.0
-    $byMonth      = @{}
-    $today        = (Get-Date).ToString("yyyy-MM-dd")
-    $currentMonth = (Get-Date).ToString("yyyy-MM")
-
-    $projectDirs = [System.IO.Directory]::GetDirectories($projectsDir)
-    foreach ($dir in $projectDirs) {
-        try {
-            $jsonlFiles = [System.IO.Directory]::GetFiles($dir, "*.jsonl")
-        } catch { continue }
-        foreach ($filePath in $jsonlFiles) {
-            try {
-                $reader = [System.IO.StreamReader]::new($filePath, [System.Text.Encoding]::UTF8)
-                while (($line = $reader.ReadLine()) -ne $null) {
-                    if ($line.Length -lt 20) { continue }
-                    try {
-                        $e = $line | ConvertFrom-Json -ErrorAction Stop
-                        if ($e.type -ne "assistant") { continue }
-                        $usage = $e.message.usage
-                        if (-not $usage) { continue }
-                        $model = if ($e.message.model) { [string]$e.message.model } else { "" }
-                        if ($model -eq "<synthetic>") { continue }
-                        $ts = if ($e.timestamp) { [string]$e.timestamp } else { "" }
-                        if ($ts.Length -lt 7) { continue }
-
-                        $cost  = script:Get-Cost $usage $model
-                        $month = $ts.Substring(0, 7)
-                        $day   = if ($ts.Length -ge 10) { $ts.Substring(0, 10) } else { "" }
-
-                        $totalCost += $cost
-                        if ($byMonth.ContainsKey($month)) { $byMonth[$month] += $cost } else { $byMonth[$month] = $cost }
-                        if ($day -eq $today) { $todayCost += $cost }
-                    } catch { }
-                }
-                $reader.Close(); $reader.Dispose()
-            } catch { }
+    if (-not (Test-Path $script:USAGE_JS)) { return $null }
+    try {
+        $psi = New-Object System.Diagnostics.ProcessStartInfo
+        $psi.FileName               = "node"
+        $psi.Arguments              = "`"$script:USAGE_JS`" --json"
+        $psi.UseShellExecute        = $false
+        $psi.RedirectStandardOutput = $true
+        $psi.CreateNoWindow         = $true
+        $psi.StandardOutputEncoding = [System.Text.Encoding]::UTF8
+        $proc = [System.Diagnostics.Process]::Start($psi)
+        $out  = $proc.StandardOutput.ReadToEnd()
+        $proc.WaitForExit()
+        if ($proc.ExitCode -ne 0 -or -not $out) { return $null }
+        $j = $out | ConvertFrom-Json
+        return @{
+            Total        = [math]::Round([double]$j.total, 6)
+            Today        = [math]::Round([double]$j.today, 6)
+            CurrentMonth = [math]::Round([double]$j.month, 6)
+            Month        = [string]$j.monthKey
         }
-    }
-
-    $monthCost = if ($byMonth.ContainsKey($currentMonth)) { $byMonth[$currentMonth] } else { 0.0 }
-    return @{
-        Total        = [math]::Round($totalCost, 6)
-        Today        = [math]::Round($todayCost, 6)
-        CurrentMonth = [math]::Round($monthCost, 6)
-        Month        = $currentMonth
-    }
+    } catch { return $null }
 }
 
 # ─── Startup ─────────────────────────────────────────────────────────────────

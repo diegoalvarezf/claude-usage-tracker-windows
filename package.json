@@ -33,7 +33,7 @@
   "scripts": {
     "postinstall": "node postinstall.js",
     "test": "node test/pricing.test.js && node test/providers.test.js",
-    "sync-extension": "node -e \"require('fs').cpSync('lib','vscode-extension/lib',{recursive:true})\""
+    "sync-extension": "node -e \"const fs=require('fs');fs.rmSync('vscode-extension/lib',{recursive:true,force:true});fs.cpSync('lib','vscode-extension/lib',{recursive:true});fs.copyFileSync('orange-logo.svg','vscode-extension/orange-logo.svg')\""
   },
   "files": [
     "claude-usage.js",

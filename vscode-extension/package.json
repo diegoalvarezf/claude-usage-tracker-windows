@@ -1,12 +1,18 @@
 {
   "name": "claude-usage-tracker",
   "displayName": "Claude Usage Tracker",
-  "description": "Muestra el uso y costes de Claude Code en la barra de estado de VS Code",
-  "version": "1.2.0",
+  "description": "Uso y costes de Claude Code, Codex CLI y Gemini CLI en la barra de estado de VS Code",
+  "version": "2.0.0",
   "publisher": "masorange",
-  "engines": { "vscode": "^1.75.0" },
-  "categories": ["Other"],
-  "activationEvents": ["*"],
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "*"
+  ],
   "main": "./extension.js",
   "contributes": {
     "commands": [
@@ -24,7 +30,10 @@
       "properties": {
         "claudeUsage.billingMode": {
           "type": "string",
-          "enum": ["api", "plan"],
+          "enum": [
+            "api",
+            "plan"
+          ],
           "enumDescriptions": [
             "Facturación por tokens (API directa). Muestra el coste real.",
             "Suscripción plana (Claude Max / Pro). Muestra el equivalente estimado de API como referencia."
@@ -40,5 +49,10 @@
         }
       }
     }
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/diegoalvarezf/claude-usage-tracker-windows.git"
   }
 }
